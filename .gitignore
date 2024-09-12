@@ -34,3 +34,4 @@ build/
 
 ### Extra
 /src/main/resources/static/uploads/*
+/logs
