@@ -525,3 +525,6 @@ java.lang.RuntimeException: Stock not found
 2024-09-12 13:54:39 INFO  com.example.bankdkistock.controller.StockController - createStock request: RequestStockDTO(id=null, namaBarang=Handphone, jumlahStok=10, nomorSeriBarang=I-100, additionalInfo={"brand": "Apple", "model": "iPhone 15"}, gambarBarang=org.springframework.web.multipart.support.StandardMultipartHttpServletRequest$StandardMultipartFile@5361fd5)
 2024-09-12 13:54:39 INFO  com.example.bankdkistock.controller.StockController - Response: com.example.bankdkistock.dto.ApiResponse@24db9198
 2024-09-12 13:54:39 INFO  com.example.bankdkistock.controller.StockController - createStock response: <200 OK OK,com.example.bankdkistock.dto.ApiResponse@24db9198,[]>
+2024-09-12 14:00:44 INFO  org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2024-09-12 14:00:44 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2024-09-12 14:00:44 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
