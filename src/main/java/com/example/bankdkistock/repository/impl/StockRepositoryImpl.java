@@ -23,12 +23,12 @@ public class StockRepositoryImpl implements StockRepository {
     private EntityManager entityManager;
 
     @Override
-    @Transactional
     public Stock save(Stock stock) {
         if (stock.getId() == null) {
-            entityManager.createNativeQuery(
+            Object id = entityManager.createNativeQuery(
                     "INSERT INTO stocks (nama_barang, jumlah_stok, nomor_seri_barang, additional_info, gambar_barang, created_at, created_by) " +
-                                    "VALUES (:namaBarang, :jumlahStok, :nomorSeriBarang, cast(:additionalInfo as jsonb), :gambarBarang, :createdAt, :createdBy)")
+                                    "VALUES (:namaBarang, :jumlahStok, :nomorSeriBarang, cast(:additionalInfo as jsonb), :gambarBarang, :createdAt, :createdBy) " +
+                                    "RETURNING id")
                     .setParameter("namaBarang", stock.getNamaBarang())
                     .setParameter("jumlahStok", stock.getJumlahStok())
                     .setParameter("nomorSeriBarang", stock.getNomorSeriBarang())
@@ -36,7 +36,9 @@ public class StockRepositoryImpl implements StockRepository {
                     .setParameter("gambarBarang", stock.getGambarBarang())
                     .setParameter("createdAt", stock.getCreatedAt())
                     .setParameter("createdBy", stock.getCreatedBy())
-                    .executeUpdate();
+                    .getSingleResult();
+
+            stock.setId(((Number) id).longValue());
         } else {
             entityManager.createNativeQuery(
                     "UPDATE stocks SET nama_barang = :namaBarang, jumlah_stok = :jumlahStok, nomor_seri_barang = :nomorSeriBarang, " +

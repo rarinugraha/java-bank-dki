@@ -1,22 +1,18 @@
 package com.example.bankdkistock.service;
 
 import com.example.bankdkistock.dto.ResponseStockDTO;
-import com.example.bankdkistock.exception.NotFoundException;
 import com.example.bankdkistock.dto.RequestStockDTO;
 import com.example.bankdkistock.model.Stock;
 import com.example.bankdkistock.model.User;
 import com.example.bankdkistock.repository.StockRepository;
 import com.example.bankdkistock.util.AuthenticatedUserUtil;
-import jakarta.transaction.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -36,8 +32,7 @@ public class StockService {
         this.authenticatedUserUtil = authenticatedUserUtil;
     }
 
-    @Transactional
-    public Stock createStock(RequestStockDTO requestStockDTO) throws Exception {
+    public ResponseStockDTO createStock(RequestStockDTO requestStockDTO) throws Exception {
         String username = authenticatedUserUtil.getAuthenticatedUsername();
         User currentUser = userService.findByUsername(username);
 
@@ -50,66 +45,60 @@ public class StockService {
                 .createdBy(currentUser.getId())
                 .build();
 
-        MultipartFile imageFile = requestStockDTO.getGambarBarang();
-        if (imageFile != null && !imageFile.isEmpty()) {
-            String contentType = imageFile.getContentType();
-            if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
-                throw new Exception("Only JPG and PNG images are allowed");
-            }
-
-            String imagePath = saveImageToStaticFolder(imageFile);
+        if (requestStockDTO.getGambarBarang() != null && !requestStockDTO.getGambarBarang().isEmpty()) {
+            validateImage(requestStockDTO.getGambarBarang());
+            String imagePath = saveImage(requestStockDTO.getGambarBarang());
             stock.setGambarBarang(imagePath);
         }
 
-        return stockRepository.save(stock);
+        try {
+            Stock savedStock = stockRepository.save(stock);
+            return convertToDTO(savedStock);
+        } catch (DataIntegrityViolationException ex) {
+            if (ex.getMessage().contains("uc_stock_nomorseribarang")) {
+                throw new Exception("The 'Nomor Seri Barang' must be unique. The value '" + requestStockDTO.getNomorSeriBarang() + "' already exists.");
+            }
+
+            throw new Exception("An error occurred while saving the stock.");
+        }
     }
 
     public List<ResponseStockDTO> listAllStocks() {
-        return stockRepository.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
-    }
-
-    public ResponseStockDTO getStockById(Long id) {
-        Optional<Stock> stock = stockRepository.findById(id);
-        return stock.map(this::convertToDTO)
-                .orElseThrow(() -> new NotFoundException("Stock not found with id: " + id));
+        return stockRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     public Stock updateStock(Long id, RequestStockDTO requestStockDTO) throws Exception {
         String username = authenticatedUserUtil.getAuthenticatedUsername();
         User currentUser = userService.findByUsername(username);
 
-        Stock existingStock = stockRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Stock not found"));
+        Optional<Stock> existingStockOptional = stockRepository.findById(id);
+        if (existingStockOptional.isEmpty()) return null;
 
-        existingStock.setNamaBarang(requestStockDTO.getNamaBarang());
-        existingStock.setJumlahStok(requestStockDTO.getJumlahStok());
-        existingStock.setNomorSeriBarang(requestStockDTO.getNomorSeriBarang());
-        existingStock.setAdditionalInfo(requestStockDTO.getAdditionalInfo());
-        existingStock.setUpdatedAt(LocalDateTime.now());
-        existingStock.setUpdatedBy(currentUser.getId());
-
-        if (requestStockDTO.getGambarBarang() != null && !requestStockDTO.getGambarBarang().isEmpty()) {
-            MultipartFile imageFile = requestStockDTO.getGambarBarang();
-            String contentType = imageFile.getContentType();
-            if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
-                throw new Exception("Only JPG and PNG images are allowed");
-            }
-
-            String newImagePath = saveImageToStaticFolder(imageFile);
-
-            if (existingStock.getGambarBarang() != null) {
-                deleteOldImage(existingStock.getGambarBarang());
-            }
-
-            existingStock.setGambarBarang(newImagePath);
-        }
+        Stock existingStock = existingStockOptional.get();
+        updateStockDetails(existingStock, requestStockDTO, currentUser);
 
         return stockRepository.save(existingStock);
     }
 
-    public void deleteStock(Long id) {
-        Stock stock = stockRepository.findById(id).orElseThrow(() -> new NotFoundException("Stock not found with id: " + id));
-        stockRepository.delete(stock);
+    public ResponseStockDTO getStockById(Long id) {
+        return stockRepository.findById(id)
+                .map(this::convertToDTO)
+                .orElse(null);
+    }
+
+    public boolean deleteStock(Long id) {
+        return stockRepository.findById(id)
+                .map(stock -> {
+                    if (stock.getGambarBarang() != null) {
+                        deleteOldImage(stock.getGambarBarang());
+                    }
+
+                    stockRepository.delete(stock);
+
+                    return true;
+                }).orElse(false);
     }
 
     private ResponseStockDTO convertToDTO(Stock stock) {
@@ -127,14 +116,37 @@ public class StockService {
                 .build();
     }
 
-    private String saveImageToStaticFolder(MultipartFile imageFile) throws IOException {
-        String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
-        String uploadDir = "src/main/resources/static/uploads/";
-        Path uploadPath = Paths.get(uploadDir);
+    private void updateStockDetails(Stock existingStock, RequestStockDTO requestStockDTO, User currentUser) throws Exception {
+        existingStock.setNamaBarang(requestStockDTO.getNamaBarang());
+        existingStock.setJumlahStok(requestStockDTO.getJumlahStok());
+        existingStock.setNomorSeriBarang(requestStockDTO.getNomorSeriBarang());
+        existingStock.setAdditionalInfo(requestStockDTO.getAdditionalInfo());
+        existingStock.setUpdatedAt(LocalDateTime.now());
+        existingStock.setUpdatedBy(currentUser.getId());
 
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+        if (requestStockDTO.getGambarBarang() != null && !requestStockDTO.getGambarBarang().isEmpty()) {
+            validateImage(requestStockDTO.getGambarBarang());
+            String newImagePath = saveImage(requestStockDTO.getGambarBarang());
+
+            if (existingStock.getGambarBarang() != null) {
+                deleteOldImage(existingStock.getGambarBarang());
+            }
+
+            existingStock.setGambarBarang(newImagePath);
         }
+    }
+
+    private void validateImage(MultipartFile imageFile) throws Exception {
+        String contentType = imageFile.getContentType();
+        if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
+            throw new Exception("Only JPG and PNG images are allowed");
+        }
+    }
+
+    private String saveImage(MultipartFile imageFile) throws IOException {
+        String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
+        Path uploadPath = Paths.get("src/main/resources/static/uploads/");
+        if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
 
         Path filePath = uploadPath.resolve(fileName);
         try (InputStream inputStream = imageFile.getInputStream()) {
