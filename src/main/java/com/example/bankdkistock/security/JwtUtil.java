@@ -17,7 +17,7 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    private SecretKey secretKey;
+    private final SecretKey secretKey;
 
     public JwtUtil() {
         this.secretKey = Keys.hmacShaKeyFor("my_super_secret_key_for_jwt_signing_my_super_secret_key".getBytes(StandardCharsets.UTF_8));
@@ -59,7 +59,7 @@ public class JwtUtil {
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 hours validity
-                .signWith(secretKey, SignatureAlgorithm.HS256) // Use the injected secret key
+                .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
