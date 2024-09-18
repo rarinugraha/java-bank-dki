@@ -33,5 +33,5 @@ build/
 .vscode/
 
 ### Extra
-/src/main/resources/static/uploads/*
 /logs
+/src/main/resources/static/uploads/*

@@ -57,6 +57,16 @@ public class StockRepositoryImpl implements StockRepository {
     }
 
     @Override
+    public List<Stock> findAll() {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Stock> query = cb.createQuery(Stock.class);
+        Root<Stock> stock = query.from(Stock.class);
+        query.select(stock);
+
+        return entityManager.createQuery(query).getResultList();
+    }
+
+    @Override
     public Optional<Stock> findById(Long id) {
         try {
             String sql = "SELECT id, nama_barang, jumlah_stok, nomor_seri_barang, " +
@@ -84,16 +94,6 @@ public class StockRepositoryImpl implements StockRepository {
         } catch (NoResultException e) {
             return Optional.empty();
         }
-    }
-
-    @Override
-    public List<Stock> findAll() {
-        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<Stock> query = cb.createQuery(Stock.class);
-        Root<Stock> stock = query.from(Stock.class);
-        query.select(stock);
-
-        return entityManager.createQuery(query).getResultList();
     }
 
     @Override
