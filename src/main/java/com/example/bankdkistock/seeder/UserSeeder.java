@@ -16,7 +16,7 @@ public class UserSeeder implements CommandLineRunner {
     }
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         if (userRepository.count() == 0) {
             seedUsers();
         }

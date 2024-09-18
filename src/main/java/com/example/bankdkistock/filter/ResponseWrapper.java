@@ -6,26 +6,25 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletResponseWrapper;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintWriter;
 
 public class ResponseWrapper extends HttpServletResponseWrapper {
 
-    private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    private PrintWriter writer = new PrintWriter(outputStream);
-    private ServletOutputStream servletOutputStream = new CachedBodyServletOutputStream(outputStream);
+    private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    private final PrintWriter writer = new PrintWriter(outputStream);
+    private final ServletOutputStream servletOutputStream = new CachedBodyServletOutputStream(outputStream);
 
     public ResponseWrapper(HttpServletResponse response) {
         super(response);
     }
 
     @Override
-    public ServletOutputStream getOutputStream() throws IOException {
+    public ServletOutputStream getOutputStream() {
         return servletOutputStream;
     }
 
     @Override
-    public PrintWriter getWriter() throws IOException {
+    public PrintWriter getWriter() {
         return writer;
     }
 
@@ -53,7 +52,7 @@ public class ResponseWrapper extends HttpServletResponseWrapper {
         }
 
         @Override
-        public void write(int b) throws IOException {
+        public void write(int b) {
             byteArrayOutputStream.write(b);
         }
     }

@@ -1,15 +1,10 @@
 package com.example.bankdkistock.filter;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.FilterConfig;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
+import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -18,11 +13,6 @@ import java.util.Enumeration;
 public class LoggingFilter implements Filter {
 
     private static final Logger logger = LogManager.getLogger(LoggingFilter.class);
-
-    @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
-        //
-    }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -53,7 +43,7 @@ public class LoggingFilter implements Filter {
                 request.getMethod(), request.getRequestURI(), parameters);
     }
 
-    private void logResponse(ResponseWrapper responseWrapper) throws IOException {
+    private void logResponse(ResponseWrapper responseWrapper) {
         String responseBody = new String(responseWrapper.getResponseBody(), StandardCharsets.UTF_8);
         logger.info("Outgoing Response: [Status: {}, Body: {}]", responseWrapper.getStatus(), responseBody);
     }
