@@ -2,15 +2,16 @@
 <Configuration status="WARN">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n" />
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %logger{36} - %msg%n%throwable" />
         </Console>
 
-        <RollingFile name="File" fileName="logs/app-log.log" filePattern="logs/app-log-%d{yyyy-MM-dd}.log.gz">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n" />
+        <RollingFile name="File" fileName="logs/app-log.log" filePattern="logs/app-log-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %logger{36} - %msg%n%throwable" />
             <Policies>
                 <SizeBasedTriggeringPolicy size="10MB" />
-                <TimeBasedTriggeringPolicy />
+                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
             </Policies>
+            <DefaultRolloverStrategy max="30" fileIndex="min" />
         </RollingFile>
     </Appenders>
 
