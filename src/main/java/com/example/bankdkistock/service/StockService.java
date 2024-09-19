@@ -1,7 +1,7 @@
 package com.example.bankdkistock.service;
 
-import com.example.bankdkistock.dto.ResponseStockDTO;
 import com.example.bankdkistock.dto.RequestStockDTO;
+import com.example.bankdkistock.dto.ResponseStockDTO;
 import com.example.bankdkistock.model.Stock;
 import com.example.bankdkistock.model.User;
 import com.example.bankdkistock.repository.StockRepository;
@@ -12,7 +12,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -109,10 +112,10 @@ public class StockService {
                 .nomorSeriBarang(stock.getNomorSeriBarang())
                 .additionalInfo(stock.getAdditionalInfo())
                 .gambarBarang(stock.getGambarBarang())
-                .createdBy(stock.getCreatedBy())
                 .createdAt(stock.getCreatedAt())
-                .updatedBy(stock.getUpdatedBy())
+                .createdBy(stock.getCreatedBy())
                 .updatedAt(stock.getUpdatedAt())
+                .updatedBy(stock.getUpdatedBy())
                 .build();
     }
 

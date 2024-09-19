@@ -14,8 +14,8 @@ public class ResponseStockDTO {
     private String nomorSeriBarang;
     private String additionalInfo;
     private String gambarBarang;
-    private Long createdBy;
     private LocalDateTime createdAt;
-    private Long updatedBy;
+    private Long createdBy;
     private LocalDateTime updatedAt;
+    private Long updatedBy;
 }

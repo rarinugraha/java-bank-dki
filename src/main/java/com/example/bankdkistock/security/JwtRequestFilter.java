@@ -1,6 +1,11 @@
 package com.example.bankdkistock.security;
 
+import com.example.bankdkistock.dto.ApiResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,9 +47,23 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             try {
                 username = jwtUtil.extractUsername(jwt);
             } catch (ExpiredJwtException e) {
-                System.out.println("JWT token has expired");
+                handleException(response, "JWT token has expired", HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            } catch (SignatureException e) {
+                handleException(response, "Invalid JWT signature", HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            } catch (MalformedJwtException e) {
+                handleException(response, "Malformed JWT token", HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            } catch (UnsupportedJwtException e) {
+                handleException(response, "Unsupported JWT token", HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            } catch (IllegalArgumentException e) {
+                handleException(response, "JWT claims string is empty", HttpServletResponse.SC_BAD_REQUEST);
+                return;
             } catch (Exception e) {
-                System.out.println("Error while extracting JWT token");
+                handleException(response, "Error while extracting JWT token", HttpServletResponse.SC_BAD_REQUEST);
+                return;
             }
         }
 
@@ -56,9 +75,21 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 usernamePasswordAuthenticationToken
                         .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+            } else {
+                handleException(response, "Invalid JWT token", HttpServletResponse.SC_UNAUTHORIZED);
+                return;
             }
         }
 
         chain.doFilter(request, response);
+    }
+
+    private void handleException(HttpServletResponse response, String message, int statusCode) throws IOException {
+        ApiResponse<String> apiResponse = new ApiResponse<>("failed", message, null);
+        response.setStatus(statusCode);
+        response.setContentType("application/json");
+        ObjectMapper objectMapper = new ObjectMapper();
+        response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+        response.getWriter().flush();
     }
 }
