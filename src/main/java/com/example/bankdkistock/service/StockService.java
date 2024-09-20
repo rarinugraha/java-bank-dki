@@ -171,6 +171,35 @@ public class StockService {
         if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
             throw new Exception("Only JPG and PNG images are allowed");
         }
+
+        byte[] fileBytes = imageFile.getBytes();
+
+        if (!isValidImageSignature(fileBytes)) {
+            throw new Exception("Invalid image file: file content does not match extension");
+        }
+    }
+
+    private boolean isValidImageSignature(byte[] fileBytes) {
+        // JPEG files start with FF D8 FF
+        byte[] jpegSignature = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
+
+        // PNG files start with 89 50 4E 47 0D 0A 1A 0A
+        byte[] pngSignature = new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+
+        if (fileBytes.length > 3 && startsWith(fileBytes, jpegSignature)) {
+            return true;
+        }
+
+        return fileBytes.length > 8 && startsWith(fileBytes, pngSignature);
+    }
+
+    private boolean startsWith(byte[] fileBytes, byte[] signature) {
+        for (int i = 0; i < signature.length; i++) {
+            if (fileBytes[i] != signature[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private String saveImage(MultipartFile imageFile) throws IOException {
