@@ -3,7 +3,6 @@ package com.example.bankdkistock.controller;
 import com.example.bankdkistock.dto.ApiResponse;
 import com.example.bankdkistock.dto.RequestStockDTO;
 import com.example.bankdkistock.dto.ResponseStockDTO;
-import com.example.bankdkistock.model.Stock;
 import com.example.bankdkistock.service.StockService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,7 +38,7 @@ public class StockController {
     @PutMapping("/update/{id}")
     public ResponseEntity<ApiResponse<Object>> updateStock(@PathVariable Long id, @ModelAttribute RequestStockDTO requestStockDTO) {
         try {
-            Stock result = stockService.updateStock(id, requestStockDTO);
+            ResponseStockDTO result = stockService.updateStock(id, requestStockDTO);
             String message = result == null ? "Data not found" : "Stock updated successfully";
             return ResponseEntity.ok(new ApiResponse<>("success", message, result));
         } catch (Exception e) {

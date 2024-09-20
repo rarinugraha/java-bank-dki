@@ -6,6 +6,8 @@ import com.example.bankdkistock.model.Stock;
 import com.example.bankdkistock.model.User;
 import com.example.bankdkistock.repository.StockRepository;
 import com.example.bankdkistock.util.AuthenticatedUserUtil;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,11 +30,18 @@ public class StockService {
     private final StockRepository stockRepository;
     private final UserService userService;
     private final AuthenticatedUserUtil authenticatedUserUtil;
+    private final ObjectMapper objectMapper;
 
-    public StockService(StockRepository stockRepository, UserService userService, AuthenticatedUserUtil authenticatedUserUtil) {
+    public StockService(
+            StockRepository stockRepository,
+            UserService userService,
+            AuthenticatedUserUtil authenticatedUserUtil,
+            ObjectMapper objectMapper
+    ) {
         this.stockRepository = stockRepository;
         this.userService = userService;
         this.authenticatedUserUtil = authenticatedUserUtil;
+        this.objectMapper = objectMapper;
     }
 
     public ResponseStockDTO createStock(RequestStockDTO requestStockDTO) throws Exception {
@@ -68,11 +77,17 @@ public class StockService {
 
     public List<ResponseStockDTO> listAllStocks() {
         return stockRepository.findAll().stream()
-                .map(this::convertToDTO)
+                .map(stock -> {
+                    try {
+                        return convertToDTO(stock);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Error converting stock to DTO", e);
+                    }
+                })
                 .collect(Collectors.toList());
     }
 
-    public Stock updateStock(Long id, RequestStockDTO requestStockDTO) throws Exception {
+    public ResponseStockDTO updateStock(Long id, RequestStockDTO requestStockDTO) throws Exception {
         String username = authenticatedUserUtil.getAuthenticatedUsername();
         User currentUser = userService.findByUsername(username);
 
@@ -82,12 +97,19 @@ public class StockService {
         Stock existingStock = existingStockOptional.get();
         updateStockDetails(existingStock, requestStockDTO, currentUser);
 
-        return stockRepository.save(existingStock);
+        Stock updatedStock = stockRepository.save(existingStock);
+        return convertToDTO(updatedStock);
     }
 
     public ResponseStockDTO getStockById(Long id) {
         return stockRepository.findById(id)
-                .map(this::convertToDTO)
+                .map(stock -> {
+                    try {
+                        return convertToDTO(stock);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Error converting stock to DTO", e);
+                    }
+                })
                 .orElse(null);
     }
 
@@ -104,13 +126,18 @@ public class StockService {
                 }).orElse(false);
     }
 
-    private ResponseStockDTO convertToDTO(Stock stock) {
+    private ResponseStockDTO convertToDTO(Stock stock) throws Exception {
+        JsonNode additionalInfoJson = null;
+        if (stock.getAdditionalInfo() != null) {
+            additionalInfoJson = objectMapper.readTree(stock.getAdditionalInfo());
+        }
+
         return ResponseStockDTO.builder()
                 .id(stock.getId())
                 .namaBarang(stock.getNamaBarang())
                 .jumlahStok(stock.getJumlahStok())
                 .nomorSeriBarang(stock.getNomorSeriBarang())
-                .additionalInfo(stock.getAdditionalInfo())
+                .additionalInfo(additionalInfoJson)
                 .gambarBarang(stock.getGambarBarang())
                 .createdAt(stock.getCreatedAt())
                 .createdBy(stock.getCreatedBy())

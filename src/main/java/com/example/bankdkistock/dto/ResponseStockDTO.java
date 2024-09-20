@@ -1,5 +1,6 @@
 package com.example.bankdkistock.dto;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,7 +13,7 @@ public class ResponseStockDTO {
     private String namaBarang;
     private Integer jumlahStok;
     private String nomorSeriBarang;
-    private String additionalInfo;
+    private JsonNode additionalInfo;
     private String gambarBarang;
     private LocalDateTime createdAt;
     private Long createdBy;
